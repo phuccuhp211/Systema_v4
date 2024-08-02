@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Controller\Client\Controller_Account;
 use App\Mail\Mail_Invoices as Inv_M;
-use App\Models\Model_Pay as Pay;
+use App\Models\Model_Client as Pay;
 
 use DateTime;
 use Illuminate\Http\Request;
@@ -147,7 +147,7 @@ class Controller_Pay extends Controller {
         $response['status'] = false;
         $now = new DateTime;
 
-        $coupon = Pay::get_cp($data);
+        $coupon = Pay::coupons_get($data);
 
         if (!$coupon) $response['res'] = 'Mã không tồn tại!';
         else {
@@ -192,12 +192,12 @@ class Controller_Pay extends Controller {
         $list = json_encode(session('cart')['list']);
         $total = ($rq->input('magg')) ? session('cart')['total'] : session('cart')['total']+$sfee;
 
-        if ($coupon != '') Pay::devine($coupon); 
-        Pay::save_inv($name,$mail,$addr,$number,$notice,$mxn,$date,$list,$total,$pmmt,$sfee,$ntotal,$coupon,$p_stt);
+        if ($coupon != '') Pay::coupons_devine($coupon); 
+        Pay::invoices_add($name,$mail,$addr,$number,$notice,$mxn,$date,$list,$total,$pmmt,$sfee,$ntotal,$coupon,$p_stt);
         Mail::mailer('smtp')->to($mail)->send( new Inv_M($name,$mail,$addr,$number,$notice,$mxn,$date,$pmmt,$sfee,$total,$ntotal,$coupon) );
 
         session()->forget('cart');
-        if(session()->has('user_log')) Pay::upcart(session('user_log'));
+        if(session()->has('user_log')) Pay::users_update_cart(session('user_log'));
         if(session()->has('user-temp')) session()->forget('user-temp');
         if ($rq->ajax()) return route('dord');
     }

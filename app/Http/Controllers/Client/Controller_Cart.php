@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Model_Cart as Cart;
+use App\Models\Model_Client as Cart;
 use DateTime;
 
 class Controller_Cart extends Controller {
@@ -11,7 +11,7 @@ class Controller_Cart extends Controller {
         $id = $rq->input('id');
         $quantity = $rq->input('num', 1);
         $cart = session('cart');
-        $prod = Cart::get_sc($id)->toArray();
+        $prod = Cart::products_get_cart($id)->toArray();
         $prod['num'] = $quantity;
         $prod = $this->cal_price($prod);
         $repeated = false;
@@ -62,7 +62,7 @@ class Controller_Cart extends Controller {
     function buy($id) {
         $quantity = 1;
         $cart = session('cart');
-        $prod = Cart::get_sc($id)->toArray();
+        $prod = Cart::products_get_cart($id)->toArray();
         $prod['num'] = $quantity;
         $prod = $this->cal_price($prod);
         $repeated = false;
@@ -114,7 +114,7 @@ class Controller_Cart extends Controller {
     }
 
     function storage_cart() {
-        if(session()->has('user_log')) Cart::upcart(session('user_log'));
+        if(session()->has('user_log')) Cart::users_update_cart(session('user_log'));
         $this->echo_cart();
     }
 
@@ -142,6 +142,6 @@ class Controller_Cart extends Controller {
 
         $session = $this->total($session);
         session(['cart' => $session]);
-        Cart::upcart(session('user_log'));
+        Cart::users_update_cart(session('user_log'));
     }
 }

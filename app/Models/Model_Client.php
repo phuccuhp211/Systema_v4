@@ -44,6 +44,7 @@ class Model_Client extends Model {
 
     public static function comments_get($data) {
         return DB::table('comments')->join('users','comments.id_us','=','users.id')
+            ->select('comments.*','users.name','users.img')
             ->where('id_pd',$data)
             ->orderBy('comments.id','DESC')
             ->get();
@@ -56,6 +57,18 @@ class Model_Client extends Model {
             'id_us' => $uid,
             'date' => $date
         ]);
+    }
+
+    public static function coupons_get($name) {
+        return DB::table('vouchers')->where('name',$name)->first();
+    }
+
+    public static function coupons_devine($name) {
+        DB::table('vouchers')->where('name', $name)->decrement('remaining', 1);
+    }
+
+    public static function products_get_cart($id) {
+        return DB::table('products')->select('id','name','img','price','sale','f_date','t_date')->where('id',$id)->first();
     }
 
     public static function products_static_get() {
@@ -119,13 +132,13 @@ class Model_Client extends Model {
 
     public static function products_detail($data) {
         $prod = DB::table('products')->where('id',$data)->first();
-        if ($prod['id_cata_1'] == 3) {
-            $asd = $prod['detail'];
+        if ($prod->id_cata_1 == 3) {
+            $asd = $prod->detail;
             $qwe = json_decode(stripslashes($asd));
-            $prod['html'] = (is_array($qwe)) ? htmlspecialchars_decode($qwe[1]) : '';
+            $prod->html = (is_array($qwe)) ? htmlspecialchars_decode($qwe[1]) : '';
         }
         else {
-            $prod['html'] = htmlspecialchars_decode($prod['detail']);
+            $prod->html = htmlspecialchars_decode($prod->detail);
         }
         return $prod;
     }
@@ -135,7 +148,7 @@ class Model_Client extends Model {
         return DB::table('Products')->where([
                     ['id','!=',$data],
                     ['hidden',0],
-                    ['id_cata_2',$dt['id_cata_2']]
+                    ['id_cata_2',$dt->id_cata_2]
                 ])
             ->inRandomOrder()
             ->limit(5)
@@ -168,7 +181,35 @@ class Model_Client extends Model {
         return DB::table('invoices')->where('in_num',$number)->first();
     }
 
+    public static function invoices_add($name,$mail,$addr,$number,$notice,$mxn,$date,$list,$total,$pmmt,$sfee,$ntotal=null,$coupon=null,$p_stt) {
+        $create = [
+            'name' => $name,
+            'number' => $number,
+            'email' => $mail,
+            'address' => $addr,
+            'list' => $list,
+            'price' => $total,
+            'p_status' => $p_stt,
+            'created' => $date,
+            'in_num' => $mxn,
+            'shipfee' => $sfee,
+            'method' => $pmmt
+        ];
+
+        if ($ntotal != null) $create['offers'] = $ntotal;
+        if ($coupon != null) $create['coupon'] = $coupon;
+
+        DB::table('invoices')->create($create);
+    }
+
     public static function invoices_list_get($number) {
         return DB::table('invoices')->where('number',$number)->orderBy('id','DESC')->get();
+    }
+
+    public static function users_update_cart($name) {
+        if(session()->has('cart')) {
+            if (!empty(session('cart')['list'])) DB::table('users')->where('account',$name)->update(['cart' => json_encode(session('cart'))]);
+        } 
+        else DB::table('users')->where('account',$name)->update(['cart' => NULL]);
     }
 }
